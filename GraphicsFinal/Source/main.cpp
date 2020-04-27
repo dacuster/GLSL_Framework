@@ -92,7 +92,7 @@ void CreateShaders()
 int main()
 {
 	// Create a window.
-	mainWindow = GL_Window(800, 600);
+	mainWindow = GL_Window(WIDTH, HEIGHT);
 
 	// Initialize the window.
 	mainWindow.initialize();

@@ -9,18 +9,22 @@ GL_Window::GL_Window()
 {
 	mWidth = 800;
 	mHeight = 600;
+
+	initializeKeys();
 }
 
 GL_Window::GL_Window(GLint _width, GLint _height)
 {
 	mWidth = _width;
 	mHeight = _height;
+
+	initializeKeys();
 }
 
 GL_Window::~GL_Window()
 {
 	// Destroy the window.
-	glfwDestroyWindow(pWindow);
+	glfwDestroyWindow(mpWindow);
 
 	// Terminate GLFW.
 	glfwTerminate();
@@ -56,10 +60,10 @@ int GL_Window::initialize()
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
 
 	// Create new window.
-	pWindow = glfwCreateWindow(mWidth, mHeight, "Test Window", NULL, NULL);
+	mpWindow = glfwCreateWindow(mWidth, mHeight, "Test Window", NULL, NULL);
 
 	// Window was not created.
-	if (!pWindow)
+	if (!mpWindow)
 	{
 		// Notify the user of failed window creation.
 		printf("GLFW window creation failed!");
@@ -72,10 +76,13 @@ int GL_Window::initialize()
 	}
 
 	// Get Buffer size information.
-	glfwGetFramebufferSize(pWindow, &mBufferWidth, &mBufferHeight);
+	glfwGetFramebufferSize(mpWindow, &mBufferWidth, &mBufferHeight);
 
 	// Set the context for GLEW to use. Can use multiple windows.
-	glfwMakeContextCurrent(pWindow);
+	glfwMakeContextCurrent(mpWindow);
+
+	// Handle event callbacks.
+	createCallbacks();
 
 	// Allow modern extension features.
 	glewExperimental = GL_TRUE;
@@ -90,7 +97,7 @@ int GL_Window::initialize()
 		printf("Error: %s", glewGetErrorString(error));
 
 		// Destroy the window.
-		glfwDestroyWindow(pWindow);
+		glfwDestroyWindow(mpWindow);
 
 		// Terminate GLFW.
 		glfwTerminate();
@@ -105,6 +112,88 @@ int GL_Window::initialize()
 	// Setup viewport.
 	glViewport(0, 0, mBufferWidth, mBufferHeight);
 
+	// Get a pointer for event handling.
+	glfwSetWindowUserPointer(mpWindow, this);
+
 	// Initialized.
 	return 0;
+}
+
+GLfloat GL_Window::getMouseChangeX()
+{
+	GLfloat change = mChangeMouseX;
+
+	mChangeMouseX = 0.0f;
+
+	return change;
+}
+
+GLfloat GL_Window::getMouseChangeY()
+{
+	GLfloat change = mChangeMouseY;
+
+	mChangeMouseY = 0.0f;
+
+	return change;
+}
+
+void GL_Window::createCallbacks()
+{
+	glfwSetKeyCallback(mpWindow, handleKeys);
+	glfwSetCursorPosCallback(mpWindow, handleMouse);
+}
+
+void GL_Window::handleKeys(GLFWwindow* _pWindow, int _key, int _code, int _action, int _mode)
+{
+	GL_Window* pWindow = static_cast<GL_Window*>(glfwGetWindowUserPointer(_pWindow));
+
+	// Check for escape key press.
+	if (_key == GLFW_KEY_ESCAPE && _action == GLFW_PRESS)
+	{
+		glfwSetWindowShouldClose(_pWindow, GL_TRUE);
+	}
+
+	// Make sure key is within the ASCII range.
+	if (_key >= 0 && _key < 1024)
+	{
+		if (_action == GLFW_PRESS)
+		{
+			pWindow->mKeys[_key] = true;
+		}
+		else if (_action == GLFW_RELEASE)
+		{
+			pWindow->mKeys[_key] = false;
+		}
+	}
+}
+
+void GL_Window::handleMouse(GLFWwindow* _pWindow, double _xPosition, double _yPosition)
+{
+	GL_Window* pWindow = static_cast<GL_Window*>(glfwGetWindowUserPointer(_pWindow));
+
+	if (pWindow->mMouseFirstMoved)
+	{
+		// Set the mouse coordinates for the initial frame.
+		pWindow->mLastMouseX = (GLfloat)_xPosition;
+		pWindow->mLastMouseY = (GLfloat)_yPosition;
+
+		// Mouse moved on the screen already.
+		pWindow->mMouseFirstMoved = false;
+	}
+
+	// Calculate the change in the mouse position.
+	pWindow->mChangeMouseX = (GLfloat)_xPosition - pWindow->mLastMouseX;
+	pWindow->mChangeMouseY = pWindow->mLastMouseX - (GLfloat)_yPosition;
+
+	// Set the mouse coordinates for the next from.
+	pWindow->mLastMouseX = (GLfloat)_xPosition;
+	pWindow->mLastMouseY = (GLfloat)_yPosition;
+}
+
+void GL_Window::initializeKeys()
+{
+	for (size_t counter = 0; counter < 1024; counter++)
+	{
+		mKeys[counter] = false;
+	}
 }
