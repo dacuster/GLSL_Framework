@@ -1,6 +1,7 @@
 // Windows libraries.
 #include <stdio.h>
 #include <string>
+#include <cmath>
 
 // GL libraries.
 #include <GL/glew.h>
@@ -16,6 +17,15 @@ const GLint HEIGHT = 600;
 // Vertex data.
 GLuint VAO;
 GLuint VBO;
+
+// Uniform data.
+GLuint uniformMoveX;
+
+bool direction = true;
+
+float triangleOffset = 0.0f;
+float triangleMaxOffset = 0.7f;
+float triangleIncrement = 0.01f;
 
 const std::string vertexShaderFile = "resources\\vs\\shader.vert";
 const std::string fragmentShaderFile = "resources\\fs\\shader.frag";
@@ -149,11 +159,28 @@ int main()
 	// Validate the shader program.
 	shaderUtility.validateProgram();
 
+	// Get the location of the uniform variable.
+	uniformMoveX = shaderUtility.loadUniform("xMove");
+
 	// Loop until window is closed.
 	while (!glfwWindowShouldClose(mainWindow))
 	{
 		// Get and handle user input event.
 		glfwPollEvents();
+
+		if (direction)
+		{
+			triangleOffset += triangleIncrement;
+		}
+		else
+		{
+			triangleOffset -= triangleIncrement;
+		}
+
+		if (abs(triangleOffset) >= triangleMaxOffset)
+		{
+			direction = !direction;
+		}
 
 		// Clear the window to black.
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -163,6 +190,9 @@ int main()
 
 		// Use the shader program.
 		shaderUtility.useProgram();
+			
+			// Apply the value to the uniform variable at their location.
+			glUniform1f(uniformMoveX, triangleOffset);
 
 			// Use this VAO for the shader.
 			glBindVertexArray(VAO);

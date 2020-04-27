@@ -147,3 +147,8 @@ void ShaderUtility::deleteProgram()
 
 	return;
 }
+
+GLuint ShaderUtility::loadUniform(const GLchar* _variable)
+{
+	return glGetUniformLocation(mProgramId, _variable);
+}

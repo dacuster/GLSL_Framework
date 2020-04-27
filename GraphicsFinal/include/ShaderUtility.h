@@ -32,4 +32,7 @@ public:
 
 	// Delete the program.
 	void deleteProgram();
+
+	// Load uniform variables.
+	GLuint loadUniform(const GLchar* _variable);
 };
