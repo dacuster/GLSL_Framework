@@ -11,6 +11,7 @@ Shader::Shader()
 	mId = 0;
 	mUniformModel = 0;
 	mUniformProjection = 0;
+	mUniformView = 0;
 }
 
 Shader::~Shader()
@@ -103,6 +104,11 @@ GLuint Shader::getModelLocation()
 	return mUniformModel;
 }
 
+GLuint Shader::getViewLocation()
+{
+	return mUniformView;
+}
+
 void Shader::use()
 {
 	glUseProgram(mId);
@@ -117,6 +123,7 @@ void Shader::loadUniforms()
 {
 	mUniformModel = glGetUniformLocation(mId, "uModel");
 	mUniformProjection = glGetUniformLocation(mId, "uProjection");
+	mUniformView = glGetUniformLocation(mId, "uView");
 }
 
 GLuint Shader::loadUniform(const GLchar* _pVariable)

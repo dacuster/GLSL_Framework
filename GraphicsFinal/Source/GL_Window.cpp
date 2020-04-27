@@ -119,20 +119,20 @@ int GL_Window::initialize()
 	return 0;
 }
 
-GLfloat GL_Window::getMouseChangeX()
+GLfloat GL_Window::getMouseDeltaX()
 {
-	GLfloat change = mChangeMouseX;
+	GLfloat change = mDeltaMouseX;
 
-	mChangeMouseX = 0.0f;
+	mDeltaMouseX = 0.0f;
 
 	return change;
 }
 
-GLfloat GL_Window::getMouseChangeY()
+GLfloat GL_Window::getMouseDeltaY()
 {
-	GLfloat change = mChangeMouseY;
+	GLfloat change = mDeltaMouseY;
 
-	mChangeMouseY = 0.0f;
+	mDeltaMouseY = 0.0f;
 
 	return change;
 }
@@ -182,8 +182,8 @@ void GL_Window::handleMouse(GLFWwindow* _pWindow, double _xPosition, double _yPo
 	}
 
 	// Calculate the change in the mouse position.
-	pWindow->mChangeMouseX = (GLfloat)_xPosition - pWindow->mLastMouseX;
-	pWindow->mChangeMouseY = pWindow->mLastMouseX - (GLfloat)_yPosition;
+	pWindow->mDeltaMouseX = (GLfloat)_xPosition - pWindow->mLastMouseX;
+	pWindow->mDeltaMouseY = pWindow->mLastMouseY - (GLfloat)_yPosition;
 
 	// Set the mouse coordinates for the next from.
 	pWindow->mLastMouseX = (GLfloat)_xPosition;

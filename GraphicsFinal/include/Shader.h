@@ -25,6 +25,9 @@ public:
 	/// <summary> Get the uniform variable location for the model matrix. </summary>
 	GLuint getModelLocation();
 
+	/// <summary> Get the uniform variable location for the view matrix. </summary>
+	GLuint getViewLocation();
+
 	/// <summary> Use the shader in the program. </summary>
 	void use();
 
@@ -46,6 +49,9 @@ private:
 
 	/// <summary> Uniform model matrix for the shader. </summary>
 	GLuint mUniformModel;
+
+	/// <summary> Uniform view matrix for the shader. </summary>
+	GLuint mUniformView;
 
 	/// <summary> Compile the shader for the program. </summary>
 	void compile(GLenum _type, const char* _pContent);

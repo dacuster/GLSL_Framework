@@ -15,6 +15,7 @@
 #include <Mesh.h>
 #include <Shader.h>
 #include <GL_Window.h>
+#include <Camera.h>
 
 #define PI 3.14159265
 
@@ -36,6 +37,13 @@ std::vector<Shader*> shaders;
 
 // Window.
 GL_Window mainWindow;
+
+// Camera.
+Camera camera;
+
+// Time variables.
+GLfloat deltaTime = 0.0f;
+GLfloat lastTime = 0.0f;
 
 // Shader file locations.
 static const char* vertexShaderFile = "resources/vs/shader.vert";
@@ -103,12 +111,16 @@ int main()
 	// Create the shaders.
 	CreateShaders();
 
+	// Create a camera.
+	camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 5.0f, 0.1f);
+
 	// Get the aspect ratio of the screen.
 	GLfloat aspectRatio = (GLfloat)mainWindow.getBufferWidth() / (GLfloat)mainWindow.getBufferHeight();
 
 	// Model and projection matrices.
 	GLuint uniformProjection = 0;
 	GLuint uniformModel = 0;
+	GLuint uniformView = 0;
 
 	// Create projection matrix.
 	glm::mat4 projection = glm::perspective(glm::radians(fieldOfView), aspectRatio, 0.1f, 100.0f);
@@ -116,8 +128,21 @@ int main()
 	// Loop until window is closed.
 	while (!mainWindow.shouldClose())
 	{
+		// Get the current time.
+		GLfloat now = (GLfloat)glfwGetTime();
+
+		// Calculate delta time.
+		deltaTime = now - lastTime;
+
+		// Set the last time for the next frame.
+		lastTime = now;
+
 		// Get and handle user input event.
 		glfwPollEvents();
+
+		// Check for key presses.
+		camera.keyControl(mainWindow.getKeys(), deltaTime);
+		camera.mouseControl(mainWindow.getMouseDeltaX(), mainWindow.getMouseDeltaY());
 
 		// Clear the window to black.
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -131,6 +156,7 @@ int main()
 		// Get the uniforms.
 		uniformModel = shaders[0]->getModelLocation();
 		uniformProjection = shaders[0]->getProjectionLocation();
+		uniformView = shaders[0]->getViewLocation();
 
 		// Identity model matrix.
 		glm::mat4 model(1.0f);
@@ -143,6 +169,7 @@ int main()
 		// Apply the value to the uniform variable at their location.
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
+		glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
 
 		// Render the meshes.
 		meshes[0]->render();

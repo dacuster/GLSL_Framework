@@ -25,10 +25,10 @@ public:
 	bool* getKeys() { return mKeys; }
 
 	/// <summary Get the change in the mouse x coordinate. </summary>
-	GLfloat getMouseChangeX();
+	GLfloat getMouseDeltaX();
 
 	/// <summary Get the change in the mouse y coordinate. </summary>
-	GLfloat getMouseChangeY();
+	GLfloat getMouseDeltaY();
 
 	/// <summary> Swap the back and front buffers. </summary>
 	void swapBuffers() { glfwSwapBuffers(mpWindow); }
@@ -57,9 +57,9 @@ private:
 	/// <summary> Previous mouse y coordinate. </summary>
 	GLfloat mLastMouseY = 0.0f;
 	/// <summary> Changed mouse x coordinate. </summary>
-	GLfloat mChangeMouseX = 0.0f;
+	GLfloat mDeltaMouseX = 0.0f;
 	/// <summary> Changed mouse y coordinate. </summary>
-	GLfloat mChangeMouseY = 0.0f;
+	GLfloat mDeltaMouseY = 0.0f;
 
 	/// <summary> Check for the first movement of the mouse. </summary>
 	bool mMouseFirstMoved = true;
