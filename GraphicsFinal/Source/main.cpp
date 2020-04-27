@@ -2,65 +2,112 @@
 #include <stdio.h>
 #include <string>
 #include <cmath>
+#include <iostream>
 
 // GL libraries.
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <GLM/glm.hpp>
+#include <GLM/gtc/matrix_transform.hpp>
+#include <GLM/gtc/type_ptr.hpp>
 
 // Project libraries.
 #include <ShaderUtility.h>
+
+#define PI 3.14159265
 
 // Window dimentions.
 const GLint WIDTH = 800;
 const GLint HEIGHT = 600;
 
-// Vertex data.
+// Convert degrees to radians.
+const float toRadians = PI / 180.0f;
+
+/// <summary> Vertex array object. </summary>
 GLuint VAO;
+
+/// <summary> Vertex buffer object. </summary>
 GLuint VBO;
 
+/// <summary> Index buffer object </summary>
+GLuint IBO;
+
 // Uniform data.
-GLuint uniformMoveX;
+GLuint uniformModel;
 
+// Translation parameters.
 bool direction = true;
-
 float triangleOffset = 0.0f;
 float triangleMaxOffset = 0.7f;
 float triangleIncrement = 0.01f;
+
+// Rotation parameters.
+float currentAngle = 0.0f;
+float angleIncrement = 1.0f;
+
+// Scaling parameters.
+bool sizeDirection = true;
+float currentSize = 0.4f;
+float maximumSize = 0.8f;
+float minimumSize = 0.1f;
 
 const std::string vertexShaderFile = "resources\\vs\\shader.vert";
 const std::string fragmentShaderFile = "resources\\fs\\shader.frag";
 
 void CreateTriangle()
 {
+	unsigned int indices[] = {
+		0, 3, 1,
+		1, 3, 2,
+		2, 3, 0,
+		0, 1, 2
+	};
+
 	GLfloat verticies[] = {
 		-1.0f, -1.0f, 0.0f,
+		 0.0f, -1.0f, 1.0f,
 		 1.0f, -1.0f, 0.0f,
 		 0.0f,  1.0f, 0.0f
 	};
 
 	// Create a vertex array object.
 	glGenVertexArrays(1, &VAO);
-	
+
 	// Bind the VAO.
 	glBindVertexArray(VAO);
 
-		// Create a vertex buffer object.
-		glGenBuffers(1, &VBO);
-		
-		// Bind the VBO.
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
-			// Pass verticies into buffer. Not going to be edited (GL_STATIC_DRAW)
-			glBufferData(GL_ARRAY_BUFFER, sizeof(verticies), verticies, GL_STATIC_DRAW);
+	// Create an index buffer object.
+	glGenBuffers(1, &IBO);
 
-			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-			glEnableVertexAttribArray(0);
+	// Bind the IBO.
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+
+	// Pass indices into the buffer.
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+
+	// Create a vertex buffer object.
+	glGenBuffers(1, &VBO);
 		
-		// Unbind the VBO.
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-	
+	// Bind the VBO.
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+	// Pass verticies into buffer. Not going to be edited (GL_STATIC_DRAW)
+	glBufferData(GL_ARRAY_BUFFER, sizeof(verticies), verticies, GL_STATIC_DRAW);
+
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+
 	// Unbind the VAO
 	glBindVertexArray(0);
+		
+	// Unbind the VBO.
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	// Unbind the IBO.
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 }
 
 int main()
@@ -137,6 +184,9 @@ int main()
 		return 1;
 	}
 
+	// Enable depth test.
+	glEnable(GL_DEPTH_TEST);
+
 	// Setup viewport.
 	glViewport(0, 0, bufferWidth, bufferHeight);
 
@@ -160,7 +210,7 @@ int main()
 	shaderUtility.validateProgram();
 
 	// Get the location of the uniform variable.
-	uniformMoveX = shaderUtility.loadUniform("xMove");
+	uniformModel = shaderUtility.loadUniform("model");
 
 	// Loop until window is closed.
 	while (!glfwWindowShouldClose(mainWindow))
@@ -182,26 +232,61 @@ int main()
 			direction = !direction;
 		}
 
+		currentAngle += angleIncrement;
+
+		if (currentAngle >= 360.0)
+		{
+			currentAngle -= 360.0f;
+		}
+
+		if (sizeDirection)
+		{
+			currentSize += 0.01f;
+		}
+		else
+		{
+			currentSize -= 0.01f;
+		}
+
+		if (currentSize >= maximumSize || currentSize <= minimumSize)
+		{
+			sizeDirection = !sizeDirection;
+		}
+
 		// Clear the window to black.
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 		// Clear the color buffer data.
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Use the shader program.
 		shaderUtility.useProgram();
-			
-			// Apply the value to the uniform variable at their location.
-			glUniform1f(uniformMoveX, triangleOffset);
 
-			// Use this VAO for the shader.
-			glBindVertexArray(VAO);
-			
-				// Draw the varticies in the VAO.
-				glDrawArrays(GL_TRIANGLES, 0, 3);
+		// Identity model matrix.
+		glm::mat4 model(1.0f);
 
-			// Unbind the VAO.
-			glBindVertexArray(0);
+		// Apply matrix operations.
+		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+		model = glm::rotate(model, currentAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
+			
+		// Apply the value to the uniform variable at their location.
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+
+		// Use this VAO for the shader.
+		glBindVertexArray(VAO);
+		
+		// Bind the IBO.
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+
+		// Draw the vertices.
+		glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
+
+		// Unbind the IBO.
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+		// Unbind the VAO.
+		glBindVertexArray(0);
 
 		// Stop using the shader program.
 		shaderUtility.stopProgram();

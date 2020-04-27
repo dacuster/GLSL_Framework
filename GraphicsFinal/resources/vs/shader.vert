@@ -2,13 +2,13 @@
 
 layout (location = 0) in vec3 aPosition;
 
-uniform float xMove;
+out vec4 vertexColor;
+
+uniform mat4 model;
 
 void main()
 {
-	vec3 position = aPosition * 0.4;
 	
-	position.x += xMove;
-	
-	gl_Position = vec4(position, 1.0);
+	gl_Position = model * vec4(aPosition, 1.0);
+	vertexColor = vec4(clamp(aPosition, 0.0, 1.0), 1.0);
 }
