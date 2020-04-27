@@ -1,8 +1,8 @@
 // Windows libraries.
 #include <stdio.h>
-#include <string>
 #include <cmath>
 #include <iostream>
+#include <vector>
 
 // GL libraries.
 #include <GL/glew.h>
@@ -12,7 +12,9 @@
 #include <GLM/gtc/type_ptr.hpp>
 
 // Project libraries.
-#include <ShaderUtility.h>
+#include <Mesh.h>
+#include <Shader.h>
+#include <GL_Window.h>
 
 #define PI 3.14159265
 
@@ -21,44 +23,25 @@ const GLint WIDTH = 800;
 const GLint HEIGHT = 600;
 
 // Convert degrees to radians.
-const float toRadians = PI / 180.0f;
+const float toRadians = (float)PI / 180.0f;
 
 // Field of view (y-direction).
 const float fieldOfView = 45.0f;
 
-/// <summary> Vertex array object. </summary>
-GLuint VAO;
+// Meshes.
+std::vector<Mesh*> meshes;
 
-/// <summary> Vertex buffer object. </summary>
-GLuint VBO;
+// Shaders.
+std::vector<Shader*> shaders;
 
-/// <summary> Index buffer object </summary>
-GLuint IBO;
+// Window.
+GL_Window mainWindow;
 
-// Uniform data.
-GLuint uniformModel;
-GLuint uniformProjection;
+// Shader file locations.
+static const char* vertexShaderFile = "resources/vs/shader.vert";
+static const char* fragmentShaderFile = "resources/fs/shader.frag";
 
-// Translation parameters.
-bool direction = true;
-float triangleOffset = 0.0f;
-float triangleMaxOffset = 0.7f;
-float triangleIncrement = 0.01f;
-
-// Rotation parameters.
-float currentAngle = 0.0f;
-float angleIncrement = 1.0f;
-
-// Scaling parameters.
-bool sizeDirection = true;
-float currentSize = 0.4f;
-float maximumSize = 0.8f;
-float minimumSize = 0.1f;
-
-const std::string vertexShaderFile = "resources\\vs\\shader.vert";
-const std::string fragmentShaderFile = "resources\\fs\\shader.frag";
-
-void CreateTriangle()
+void CreateObject()
 {
 	unsigned int indices[] = {
 		0, 3, 1,
@@ -74,195 +57,67 @@ void CreateTriangle()
 		 0.0f,  1.0f, 0.0f
 	};
 
-	// Create a vertex array object.
-	glGenVertexArrays(1, &VAO);
+	Mesh* pMesh1 = new Mesh();
 
-	// Bind the VAO.
-	glBindVertexArray(VAO);
+	pMesh1->create(verticies, indices, 12, 12);
 
+	meshes.push_back(pMesh1);
+}
 
-	// Create an index buffer object.
-	glGenBuffers(1, &IBO);
+void CreateShaders()
+{
+	// Create a new shader.
+	Shader* pShader = new Shader();
 
-	// Bind the IBO.
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+	// Initialize the shader.
+	pShader->initialize();
 
-	// Pass indices into the buffer.
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+	// Load the vertex and fragment shaders.
+	pShader->load(GL_VERTEX_SHADER, vertexShaderFile);
+	pShader->load(GL_FRAGMENT_SHADER, fragmentShaderFile);
 
+	// Link the shaders.
+	pShader->link();
 
-	// Create a vertex buffer object.
-	glGenBuffers(1, &VBO);
-		
-	// Bind the VBO.
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	// Validate the shaders.
+	pShader->validate();
 
-	// Pass verticies into buffer. Not going to be edited (GL_STATIC_DRAW)
-	glBufferData(GL_ARRAY_BUFFER, sizeof(verticies), verticies, GL_STATIC_DRAW);
+	// Load the uniforms.
+	pShader->loadUniforms();
 
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(0);
-
-	// Unbind the VAO
-	glBindVertexArray(0);
-		
-	// Unbind the VBO.
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	// Unbind the IBO.
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	// Add the shader to the list.
+	shaders.push_back(pShader);
 }
 
 int main()
 {
-	// Initialize GLFW.
-	if (!glfwInit())
-	{
-		// Notify the user of failed initialization.
-		printf("GLFW initialization failed!");
-		
-		// Terminate GLFW.
-		glfwTerminate();
-		
-		// Return the error.
-		return 1;
-	}
+	// Create a window.
+	mainWindow = GL_Window(800, 600);
 
-	/***********************************
-	** Setup GLFW window properties.  **
-	***********************************/
+	// Initialize the window.
+	mainWindow.initialize();
 
-	// OpenGL version.
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	// Create an object.
+	CreateObject();
 
-	// Core profile = No backward compatibility.
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-
-	// Allow forward compatibility.
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-
-	// Create new window.
-	GLFWwindow* mainWindow = glfwCreateWindow(WIDTH, HEIGHT, "Test Window", NULL, NULL);
-
-	// Window was not created.
-	if (!mainWindow)
-	{
-		// Notify the user of failed window creation.
-		printf("GLFW window creation failed!");
-
-		// Terminate GLFW.
-		glfwTerminate();
-
-		// Return the error code.
-		return 1;
-	}
-
-	// Create buffer sizes.
-	int bufferWidth;
-	int bufferHeight;
-
-	// Get Buffer size information.
-	glfwGetFramebufferSize(mainWindow, &bufferWidth, &bufferHeight);
-
-	// Set the context for GLEW to use. Can use multiple windows.
-	glfwMakeContextCurrent(mainWindow);
-
-	// Allow modern extension features.
-	glewExperimental = GL_TRUE;
-
-	// Initialize GLEW.
-	if (glewInit() != GLEW_OK)
-	{
-		// Notify user of failed initialization.
-		printf("GLEW initialization failed!");
-
-		// Destroy the window.
-		glfwDestroyWindow(mainWindow);
-
-		// Terminate GLFW.
-		glfwTerminate();
-
-		// Return error code.
-		return 1;
-	}
-
-	// Enable depth test.
-	glEnable(GL_DEPTH_TEST);
-
-	// Setup viewport.
-	glViewport(0, 0, bufferWidth, bufferHeight);
-
-	// Create a triangle.
-	CreateTriangle();
-
-	// Create a shader loading utility.
-	ShaderUtility shaderUtility;
-
-	// Initialize the utility.
-	shaderUtility.initialize();
-
-	// Load in the vertex and fragment shaders.
-	shaderUtility.loadShader(GL_FRAGMENT_SHADER, fragmentShaderFile);
-	shaderUtility.loadShader(GL_VERTEX_SHADER, vertexShaderFile);
-
-	// Link the shader program.
-	shaderUtility.linkProgram();
-
-	// Validate the shader program.
-	shaderUtility.validateProgram();
-
-	// Get the location of the uniform variable.
-	uniformModel = shaderUtility.loadUniform("model");
-	uniformProjection = shaderUtility.loadUniform("projection");
+	// Create the shaders.
+	CreateShaders();
 
 	// Get the aspect ratio of the screen.
-	GLfloat aspectRatio = (GLfloat)bufferWidth / (GLfloat)bufferHeight;
+	GLfloat aspectRatio = (GLfloat)mainWindow.getBufferWidth() / (GLfloat)mainWindow.getBufferHeight();
+
+	// Model and projection matrices.
+	GLuint uniformProjection = 0;
+	GLuint uniformModel = 0;
 
 	// Create projection matrix.
-	glm::mat4 projection = glm::perspective(fieldOfView, aspectRatio, 0.1f, 100.0f);
+	glm::mat4 projection = glm::perspective(glm::radians(fieldOfView), aspectRatio, 0.1f, 100.0f);
 
 	// Loop until window is closed.
-	while (!glfwWindowShouldClose(mainWindow))
+	while (!mainWindow.shouldClose())
 	{
 		// Get and handle user input event.
 		glfwPollEvents();
-
-		if (direction)
-		{
-			triangleOffset += triangleIncrement;
-		}
-		else
-		{
-			triangleOffset -= triangleIncrement;
-		}
-
-		if (abs(triangleOffset) >= triangleMaxOffset)
-		{
-			direction = !direction;
-		}
-
-		currentAngle += angleIncrement;
-
-		if (currentAngle >= 360.0)
-		{
-			currentAngle -= 360.0f;
-		}
-
-		if (sizeDirection)
-		{
-			currentSize += 0.01f;
-		}
-		else
-		{
-			currentSize -= 0.01f;
-		}
-
-		if (currentSize >= maximumSize || currentSize <= minimumSize)
-		{
-			sizeDirection = !sizeDirection;
-		}
 
 		// Clear the window to black.
 		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
@@ -271,44 +126,30 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		// Use the shader program.
-		shaderUtility.useProgram();
+		shaders[0]->use();
+
+		// Get the uniforms.
+		uniformModel = shaders[0]->getModelLocation();
+		uniformProjection = shaders[0]->getProjectionLocation();
 
 		// Identity model matrix.
 		glm::mat4 model(1.0f);
 
 		// Apply matrix operations.
 		model = glm::translate(model, glm::vec3(0.0f, 0.0f, -2.5f));
-		model = glm::rotate(model, currentAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::rotate(model, 0.0f * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
 			
 		// Apply the value to the uniform variable at their location.
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 		glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
 
-		// Use this VAO for the shader.
-		glBindVertexArray(VAO);
-		
-		// Bind the IBO.
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-
-		// Draw the vertices.
-		glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);
-
-		// Unbind the IBO.
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-		// Unbind the VAO.
-		glBindVertexArray(0);
-
-		// Stop using the shader program.
-		shaderUtility.stopProgram();
+		// Render the meshes.
+		meshes[0]->render();
 
 		// Swap to back buffer.
-		glfwSwapBuffers(mainWindow);
+		mainWindow.swapBuffers();
 	}
-
-	// Delete the shaders.
-	shaderUtility.deleteProgram();
 
 	// Return error code.
 	return 0;
