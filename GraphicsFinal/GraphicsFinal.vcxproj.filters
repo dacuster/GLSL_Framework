@@ -13,10 +13,32 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Resource Files\fs">
+      <UniqueIdentifier>{ebc19999-fd09-493c-a4f9-79ed9c180da3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resource Files\vs">
+      <UniqueIdentifier>{019a3d9e-b35b-4173-89f4-083a0b25cac4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\ShaderUtility.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\ShaderUtility.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="resources\fs\shader.frag">
+      <Filter>Resource Files\fs</Filter>
+    </None>
+    <None Include="resources\vs\shader.vert">
+      <Filter>Resource Files\vs</Filter>
+    </None>
   </ItemGroup>
 </Project>

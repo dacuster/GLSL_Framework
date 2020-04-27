@@ -1,13 +1,57 @@
 // Windows libraries.
 #include <stdio.h>
+#include <string>
 
 // GL libraries.
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 
+// Project libraries.
+#include <ShaderUtility.h>
+
 // Window dimentions.
 const GLint WIDTH = 800;
 const GLint HEIGHT = 600;
+
+// Vertex data.
+GLuint VAO;
+GLuint VBO;
+
+const std::string vertexShaderFile = "resources\\vs\\shader.vert";
+const std::string fragmentShaderFile = "resources\\fs\\shader.frag";
+
+void CreateTriangle()
+{
+	GLfloat verticies[] = {
+		-1.0f, -1.0f, 0.0f,
+		 1.0f, -1.0f, 0.0f,
+		 0.0f,  1.0f, 0.0f
+	};
+
+	// Create a vertex array object.
+	glGenVertexArrays(1, &VAO);
+	
+	// Bind the VAO.
+	glBindVertexArray(VAO);
+
+		// Create a vertex buffer object.
+		glGenBuffers(1, &VBO);
+		
+		// Bind the VBO.
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+			// Pass verticies into buffer. Not going to be edited (GL_STATIC_DRAW)
+			glBufferData(GL_ARRAY_BUFFER, sizeof(verticies), verticies, GL_STATIC_DRAW);
+
+			glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(0);
+		
+		// Unbind the VBO.
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	
+	// Unbind the VAO
+	glBindVertexArray(0);
+}
 
 int main()
 {
@@ -86,21 +130,58 @@ int main()
 	// Setup viewport.
 	glViewport(0, 0, bufferWidth, bufferHeight);
 
+	// Create a triangle.
+	CreateTriangle();
+
+	// Create a shader loading utility.
+	ShaderUtility shaderUtility;
+
+	// Initialize the utility.
+	shaderUtility.initialize();
+
+	// Load in the vertex and fragment shaders.
+	shaderUtility.loadShader(GL_FRAGMENT_SHADER, fragmentShaderFile);
+	shaderUtility.loadShader(GL_VERTEX_SHADER, vertexShaderFile);
+
+	// Link the shader program.
+	shaderUtility.linkProgram();
+
+	// Validate the shader program.
+	shaderUtility.validateProgram();
+
 	// Loop until window is closed.
 	while (!glfwWindowShouldClose(mainWindow))
 	{
 		// Get and handle user input event.
 		glfwPollEvents();
 
-		// Clear the window to red.
-		glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+		// Clear the window to black.
+		glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
 
 		// Clear the color buffer data.
 		glClear(GL_COLOR_BUFFER_BIT);
 
+		// Use the shader program.
+		shaderUtility.useProgram();
+
+			// Use this VAO for the shader.
+			glBindVertexArray(VAO);
+			
+				// Draw the varticies in the VAO.
+				glDrawArrays(GL_TRIANGLES, 0, 3);
+
+			// Unbind the VAO.
+			glBindVertexArray(0);
+
+		// Stop using the shader program.
+		shaderUtility.stopProgram();
+
 		// Swap to back buffer.
 		glfwSwapBuffers(mainWindow);
 	}
+
+	// Delete the shaders.
+	shaderUtility.deleteProgram();
 
 	// Return error code.
 	return 0;
