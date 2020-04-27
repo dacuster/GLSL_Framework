@@ -23,6 +23,9 @@ const GLint HEIGHT = 600;
 // Convert degrees to radians.
 const float toRadians = PI / 180.0f;
 
+// Field of view (y-direction).
+const float fieldOfView = 45.0f;
+
 /// <summary> Vertex array object. </summary>
 GLuint VAO;
 
@@ -34,6 +37,7 @@ GLuint IBO;
 
 // Uniform data.
 GLuint uniformModel;
+GLuint uniformProjection;
 
 // Translation parameters.
 bool direction = true;
@@ -211,6 +215,13 @@ int main()
 
 	// Get the location of the uniform variable.
 	uniformModel = shaderUtility.loadUniform("model");
+	uniformProjection = shaderUtility.loadUniform("projection");
+
+	// Get the aspect ratio of the screen.
+	GLfloat aspectRatio = (GLfloat)bufferWidth / (GLfloat)bufferHeight;
+
+	// Create projection matrix.
+	glm::mat4 projection = glm::perspective(fieldOfView, aspectRatio, 0.1f, 100.0f);
 
 	// Loop until window is closed.
 	while (!glfwWindowShouldClose(mainWindow))
@@ -266,12 +277,13 @@ int main()
 		glm::mat4 model(1.0f);
 
 		// Apply matrix operations.
-		model = glm::translate(model, glm::vec3(0.0f, 0.0f, 0.0f));
+		model = glm::translate(model, glm::vec3(0.0f, 0.0f, -2.5f));
 		model = glm::rotate(model, currentAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
 		model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
 			
 		// Apply the value to the uniform variable at their location.
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
 
 		// Use this VAO for the shader.
 		glBindVertexArray(VAO);
