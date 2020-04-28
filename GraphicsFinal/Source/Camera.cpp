@@ -41,13 +41,13 @@ void Camera::keyControl(bool* _keys, GLfloat _deltaTime)
 	// Move left by speed.
 	if (_keys[GLFW_KEY_A])
 	{
-		mPosition -= mRight * velocity;
+		mPosition += mRight * velocity;
 	}
 
 	// Move right by speed.
 	if (_keys[GLFW_KEY_D])
 	{
-		mPosition += mRight * velocity;
+		mPosition -= mRight * velocity;
 	}
 
 	// Move down by speed.
@@ -63,25 +63,18 @@ void Camera::keyControl(bool* _keys, GLfloat _deltaTime)
 	}
 }
 
-void Camera::mouseControl(GLfloat _deltaX, GLfloat _deltaY)
+void Camera::mouseControl(bool* _buttons, GLfloat _deltaX, GLfloat _deltaY)
 {
-	_deltaX *= mAngularSpeed;
-	_deltaY *= mAngularSpeed;
+	if (_buttons[GLFW_MOUSE_BUTTON_LEFT])
+	{
+		_deltaX *= mAngularSpeed;
+		_deltaY *= mAngularSpeed;
 
-	mYaw += _deltaX;
-	mPitch += _deltaY;
+		mYaw += _deltaX;
+		mPitch += _deltaY;
 
-	//if (mPitch > 89.0f)
-	//{
-	//	mPitch = 89.0f;
-	//}
-
-	//if (mPitch < -89.0f)
-	//{
-	//	mPitch = -89.0f;
-	//}
-
-	update();
+		update();
+	}
 }
 
 glm::mat4 Camera::calculateViewMatrix()

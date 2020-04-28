@@ -11,6 +11,7 @@ GL_Window::GL_Window()
 	mHeight = 600;
 
 	initializeKeys();
+	initializeMouseButtons();
 }
 
 GL_Window::GL_Window(GLint _width, GLint _height)
@@ -19,6 +20,7 @@ GL_Window::GL_Window(GLint _width, GLint _height)
 	mHeight = _height;
 
 	initializeKeys();
+	initializeMouseButtons();
 }
 
 GL_Window::~GL_Window()
@@ -50,8 +52,8 @@ int GL_Window::initialize()
 	***********************************/
 
 	// OpenGL version.
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 1);
 
 	// Core profile = No backward compatibility.
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
@@ -141,6 +143,8 @@ void GL_Window::createCallbacks()
 {
 	glfwSetKeyCallback(mpWindow, handleKeys);
 	glfwSetCursorPosCallback(mpWindow, handleMouse);
+	glfwSetMouseButtonCallback(mpWindow, handleMouseButton);
+	glfwSetWindowSizeCallback(mpWindow, handleWindow);
 }
 
 void GL_Window::handleKeys(GLFWwindow* _pWindow, int _key, int _code, int _action, int _mode)
@@ -181,6 +185,19 @@ void GL_Window::handleMouse(GLFWwindow* _pWindow, double _xPosition, double _yPo
 		pWindow->mMouseFirstMoved = false;
 	}
 
+	if (pWindow->mMouseButtons[GLFW_MOUSE_BUTTON_LEFT] && !pWindow->mMouseFirstClick)
+	{
+		// Set the mouse coordinates for the initial frame.
+		pWindow->mLastMouseX = (GLfloat)_xPosition;
+		pWindow->mLastMouseY = (GLfloat)_yPosition;
+		pWindow->mMouseFirstClick = true;
+	}
+
+	if (!pWindow->mMouseButtons[GLFW_MOUSE_BUTTON_LEFT])
+	{
+		pWindow->mMouseFirstClick = false;
+	}
+
 	// Calculate the change in the mouse position.
 	pWindow->mDeltaMouseX = (GLfloat)_xPosition - pWindow->mLastMouseX;
 	pWindow->mDeltaMouseY = pWindow->mLastMouseY - (GLfloat)_yPosition;
@@ -190,10 +207,46 @@ void GL_Window::handleMouse(GLFWwindow* _pWindow, double _xPosition, double _yPo
 	pWindow->mLastMouseY = (GLfloat)_yPosition;
 }
 
+void GL_Window::handleMouseButton(GLFWwindow* _pWindow, int _button, int _action, int _mods)
+{
+	GL_Window* pWindow = static_cast<GL_Window*>(glfwGetWindowUserPointer(_pWindow));
+
+	// Make sure button is within mouse button range.
+	if (_button >= 0 && _button < 8)
+	{
+		if (_action == GLFW_PRESS)
+		{
+			pWindow->mMouseButtons[_button] = true;
+		}
+		else if (_action == GLFW_RELEASE)
+		{
+			pWindow->mMouseButtons[_button] = false;
+		}
+	}
+}
+
+void GL_Window::handleWindow(GLFWwindow* _pWindow, int _width, int _height)
+{
+	GL_Window* pWindow = static_cast<GL_Window*>(glfwGetWindowUserPointer(_pWindow));
+
+	pWindow->mBufferWidth = (GLint)_width;
+	pWindow->mBufferHeight = (GLint)_height;
+
+	glViewport(0, 0, pWindow->getBufferWidth(), pWindow->getBufferHeight());
+}
+
 void GL_Window::initializeKeys()
 {
 	for (size_t counter = 0; counter < 1024; counter++)
 	{
 		mKeys[counter] = false;
+	}
+}
+
+void GL_Window::initializeMouseButtons()
+{
+	for (size_t counter = 0; counter < 8; counter++)
+	{
+		mMouseButtons[counter] = false;
 	}
 }

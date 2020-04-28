@@ -9,9 +9,15 @@ public:
 
 	void keyControl(bool* _keys, GLfloat _deltaTime);
 
-	void mouseControl(GLfloat _deltaX, GLfloat _deltaY);
+	void mouseControl(bool* _buttons, GLfloat _deltaX, GLfloat _deltaY);
 
 	glm::mat4 calculateViewMatrix();
+
+	glm::vec3 getPosition() const { return mPosition; }
+	glm::vec3 getFront() const { return mFront; }
+
+	GLfloat getYaw() const { return mYaw; }
+	GLfloat getPitch() const { return mPitch; }
 
 private:
 	// Position of the camera.
